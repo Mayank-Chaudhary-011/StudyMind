@@ -9,12 +9,19 @@ langchain-openai
 pypdf
 
 sentence-transformers
+
+torch==2.3.1
+torchvision==0.18.1
+transformers==4.52.4
+
 numpy
 
-chromadb
+chromadb==0.5.5
 
 groq
 
 python-dotenv
 
 openai
+
+protobuf==3.20.3
