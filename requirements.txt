@@ -13,6 +13,7 @@ pypdf
 # Embeddings
 sentence-transformers
 torch
+torchvision
 transformers
 
 # Vector store
