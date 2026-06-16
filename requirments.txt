@@ -1,16 +1,17 @@
-streamlit==1.45.1
+streamlit
 
-langchain==0.3.26
-langchain-core==0.3.66
-langchain-community==0.3.27
-langchain-openai==0.3.27
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
 
-openai==1.93.0
+pypdf
 
-sentence-transformers==5.0.0
+sentence-transformers
+numpy
 
-chromadb==1.0.15
+chromadb
 
-pypdf==5.7.0
+groq
 
-python-dotenv==1.1.1
+python-dotenv
