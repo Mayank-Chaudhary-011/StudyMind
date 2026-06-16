@@ -1,26 +1,24 @@
 streamlit
 
+# LangChain
 langchain
 langchain-core
 langchain-community
 langchain-text-splitters
-langchain-openai
+langchain-groq
 
+# PDF
 pypdf
 
+# Embeddings
 sentence-transformers
 torch
-torchvision
 transformers
 
-numpy
-
+# Vector store
 chromadb==0.5.5
 
-groq
-
+# Utils
+numpy
 python-dotenv
-
-openai
-
 protobuf==3.20.3
