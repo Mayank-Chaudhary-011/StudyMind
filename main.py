@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import tempfile
 import streamlit as st
 
 os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
@@ -591,26 +592,44 @@ if uploaded_files:
     if new_names != already:
         if st.button("Process PDFs"):
             with st.spinner("Processing your PDFs..."):
-                os.makedirs("data", exist_ok=True)
-                saved_paths = []
+                all_docs = []
+
                 for f in uploaded_files:
-                    file_path = os.path.join("data", f.name)
-                    with open(file_path, "wb") as out:
-                        out.write(f.read())
-                    saved_paths.append(file_path)
-                docs   = load_docs(file_paths=saved_paths)
-                chunks = split_docs(docs)
+                     # Write to a named temp file (PyPDFLoader needs a real file path)
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                        tmp.write(f.read())
+                        tmp_path = tmp.name
+
+                    try:
+                        docs = load_docs(file_paths=[tmp_path])
+                        all_docs.extend(docs)
+                    finally:
+                        os.remove(tmp_path)  # clean up immediately
+
+                if not all_docs:
+                    st.error("❌ Could not extract text from the PDFs. They may be scanned/image-only.")
+                    st.stop()
+
+                chunks = split_docs(all_docs)
+
+                if not chunks:
+                    st.error("❌ No chunks produced. PDFs may be empty or unreadable.")
+                    st.stop()
+
                 embedding_manager = EmbeddingManager()
                 embeddings = embedding_manager.generate_embedding([d.page_content for d in chunks])
+
                 vector_store = VectorStoreManager()
                 vector_store.add_documents(chunks, embeddings)
+
                 st.session_state.retriever = RAGRetriever(embedding_manager, vector_store)
                 st.session_state.vectorstore_ready   = True
                 st.session_state.messages            = []
                 st.session_state.quiz_data           = None
                 st.session_state.uploaded_file_names = [f.name for f in uploaded_files]
                 st.session_state.workspace_open      = True
-            st.success(f"✅ {len(uploaded_files)} PDF(s) ready!")
+
+        st.success(f"✅ {len(uploaded_files)} PDF(s) ready!")
     else:
         st.success(f"✅ {len(uploaded_files)} PDF(s) already loaded!")
         if st.button("Open Workspace"):
