@@ -585,6 +585,30 @@ with c_model:
         st.session_state.llm_model = selected_model
         st.rerun()
 
+# API Key input
+api_key_label = "Groq API Key" if st.session_state.llm_provider == "Groq" else "Gemini API Key"
+api_key_help = (
+    "Get your free API key from [console.groq.com](https://console.groq.com)"
+    if st.session_state.llm_provider == "Groq"
+    else "Get your free API key from [aistudio.google.com](https://aistudio.google.com/apikey)"
+)
+entered_key = st.text_input(
+    api_key_label,
+    value=st.session_state.get("llm_api_key", ""),
+    type="password",
+    help=api_key_help,
+    placeholder=f"Enter your {st.session_state.llm_provider} API key..."
+)
+if entered_key != st.session_state.get("llm_api_key", ""):
+    st.session_state.llm_api_key = entered_key
+    st.rerun()
+
+# Show status indicator
+if st.session_state.get("llm_api_key", "").strip() or os.environ.get("GROQ_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+    st.success(f"✅ API key configured for **{st.session_state.llm_provider}**", icon="🔑")
+else:
+    st.warning(f"⚠️ No API key found for **{st.session_state.llm_provider}**. Enter your key above or set it via Streamlit Secrets.", icon="🔑")
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Upload ────────────────────────────────────────────────────────────────────
@@ -777,6 +801,10 @@ if st.session_state.active_tab == "chat":
                         answer = str(e)
                         st.warning(str(e))
                         st.info("💡 **Tip:** Go to the LLM settings section above and switch the provider to **Groq** to continue chatting without interruption.")
+                    except ValueError as e:
+                        answer = f"⚠️ {e}"
+                        st.error(str(e))
+                        st.info("💡 **Tip:** Scroll up to the **Configure LLM Model** section and enter your API key to get started.")
                 if not isinstance(answer, str) or not answer.startswith("⚠️"):
                     st.write(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
@@ -833,6 +861,10 @@ elif st.session_state.active_tab == "quiz":
                 except GeminiLimitExceeded as e:
                     st.warning(str(e))
                     st.info("💡 **Tip:** Go to the LLM settings section above and switch the provider to **Groq** to continue generating quizzes without interruption.")
+                    st.session_state.quiz_data = None
+                except ValueError as e:
+                    st.error(str(e))
+                    st.info("💡 **Tip:** Scroll up to the **Configure LLM Model** section and enter your API key to get started.")
                     st.session_state.quiz_data = None
 
     if st.session_state.quiz_data:
