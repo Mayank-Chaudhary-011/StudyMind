@@ -1,0 +1,48 @@
+import os
+import streamlit as st
+import google.generativeai as genai
+from groq import Groq
+
+def get_llm_client():
+    """Gets the configured LLM provider, API key, and model."""
+    provider = st.session_state.get("llm_provider", "Groq")
+    model = st.session_state.get("llm_model", "llama-3.1-8b-instant")
+    
+    # Try user-supplied key from session state, then check environment variables or streamlit secrets
+    api_key = st.session_state.get("llm_api_key", "").strip()
+    
+    if not api_key:
+        if provider == "Groq":
+            api_key = os.environ.get("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", "")
+        elif provider == "Gemini":
+            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
+            
+    return provider, api_key, model
+
+def generate_completion(prompt, temperature=0.1, max_tokens=1024):
+    """Generates completion using either Groq or Google Gemini based on settings."""
+    provider, api_key, model = get_llm_client()
+    
+    if not api_key:
+        raise ValueError(f"API Key for {provider} is not configured. Please set it in the settings panel or environment.")
+
+    if provider == "Groq":
+        client = Groq(api_key=api_key)
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        return response.choices[0].message.content
+    elif provider == "Gemini":
+        genai.configure(api_key=api_key)
+        generation_config = {
+            "temperature": temperature,
+            "max_output_tokens": max_tokens,
+        }
+        client = genai.GenerativeModel(model_name=model)
+        response = client.generate_content(prompt, generation_config=generation_config)
+        return response.text
+    else:
+        raise ValueError(f"Unknown LLM Provider: {provider}")

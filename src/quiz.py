@@ -1,9 +1,7 @@
 import os
 import json
 import re
-from groq import Groq
-
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+from llm import generate_completion
 
 QUIZ_PROMPT = """
 You are an expert teacher. Based on the study material below, generate {num_questions} multiple choice questions.
@@ -42,14 +40,7 @@ def generate_quiz(retriever, topic="", num_questions=5):
         context=context[:6000]
     )
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-        max_tokens=2048
-    )
-
-    raw = response.choices[0].message.content.strip()
+    raw = generate_completion(prompt, temperature=0.1, max_tokens=2048).strip()
     raw = re.sub(r"```json|```", "", raw).strip()
 
     try:

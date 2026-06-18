@@ -1,7 +1,4 @@
-import os
-from groq import Groq
-
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+from llm import generate_completion
 
 def generate_output(query, retriever, top_k=5):
     results = retriever.retrieve(query, top_k)
@@ -15,10 +12,4 @@ def generate_output(query, retriever, top_k=5):
 Context: {context}
 Query: {query}"""
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-        max_tokens=1024
-    )
-    return response.choices[0].message.content
+    return generate_completion(prompt, temperature=0.1, max_tokens=1024)

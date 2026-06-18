@@ -4,7 +4,12 @@ import time
 import tempfile
 import streamlit as st
 
-os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+if "GROQ_API_KEY" in st.secrets:
+    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+if "GEMINI_API_KEY" in st.secrets:
+    os.environ["GEMINI_API_KEY"] = st.secrets["GEMINI_API_KEY"]
+if "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 from loader import load_docs
@@ -504,7 +509,8 @@ for key, val in [
     ("messages", []), ("retriever", None), ("vectorstore_ready", False),
     ("uploaded_file_names", []), ("quiz_data", None),
     ("active_tab", "chat"), ("workspace_open", False),
-    ("chat_sessions", []), ("current_session", None)
+    ("chat_sessions", []), ("current_session", None),
+    ("llm_provider", "Groq"), ("llm_model", "llama-3.1-8b-instant"), ("llm_api_key", "")
 ]:
     if key not in st.session_state:
         st.session_state[key] = val
@@ -545,7 +551,40 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("<br><br>", unsafe_allow_html=True)
+# ── LLM Configuration ─────────────────────────────────────────────────────────
+st.markdown(f"""
+<div class="upload-section">
+    <div class="s-eye a4">Setup</div>
+    <div class="s-title a4">Configure <em>LLM Model.</em></div>
+</div>
+""", unsafe_allow_html=True)
+
+c_prov, c_model = st.columns([1, 1], gap="large")
+with c_prov:
+    provider_options = ["Groq", "Gemini"]
+    default_prov_idx = provider_options.index(st.session_state.llm_provider) if st.session_state.llm_provider in provider_options else 0
+    selected_provider = st.selectbox("LLM Provider", provider_options, index=default_prov_idx)
+    if selected_provider != st.session_state.llm_provider:
+        st.session_state.llm_provider = selected_provider
+        if selected_provider == "Groq":
+            st.session_state.llm_model = "llama-3.1-8b-instant"
+        elif selected_provider == "Gemini":
+            st.session_state.llm_model = "gemini-2.5-flash"
+        st.rerun()
+
+with c_model:
+    if st.session_state.llm_provider == "Groq":
+        model_options = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it", "mixtral-8x7b-32768"]
+    else:
+        model_options = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]
+        
+    default_model_idx = model_options.index(st.session_state.llm_model) if st.session_state.llm_model in model_options else 0
+    selected_model = st.selectbox("Model Name", model_options, index=default_model_idx)
+    if selected_model != st.session_state.llm_model:
+        st.session_state.llm_model = selected_model
+        st.rerun()
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
