@@ -3,6 +3,12 @@ import streamlit as st
 import google.generativeai as genai
 from groq import Groq
 
+
+class GeminiLimitExceeded(Exception):
+    """Raised when the Gemini API rate limit or quota is exceeded."""
+    pass
+
+
 def get_llm_client():
     """Gets the configured LLM provider, API key, and model."""
     provider = st.session_state.get("llm_provider", "Groq")
@@ -42,7 +48,20 @@ def generate_completion(prompt, temperature=0.1, max_tokens=1024):
             "max_output_tokens": max_tokens,
         }
         client = genai.GenerativeModel(model_name=model)
-        response = client.generate_content(prompt, generation_config=generation_config)
-        return response.text
+        try:
+            response = client.generate_content(prompt, generation_config=generation_config)
+            return response.text
+        except Exception as e:
+            error_msg = str(e).lower()
+            if any(keyword in error_msg for keyword in [
+                "429", "resource_exhausted", "rate limit",
+                "quota", "too many requests", "resourceexhausted"
+            ]):
+                raise GeminiLimitExceeded(
+                    "⚠️ Gemini API rate limit exceeded! "
+                    "You have hit the free-tier usage limit. "
+                    "Please switch to **Groq** LLM provider from the settings above to continue using the app."
+                )
+            raise
     else:
         raise ValueError(f"Unknown LLM Provider: {provider}")

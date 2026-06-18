@@ -18,6 +18,7 @@ from embedder import EmbeddingManager
 from vectore_store import VectorStoreManager
 from retriever import RAGRetriever
 from generator import generate_output
+from llm import GeminiLimitExceeded
 
 st.set_page_config(
     page_title="StudyMind AI — Workspace",
@@ -770,8 +771,14 @@ if st.session_state.active_tab == "chat":
                 st.write(prompt)
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
-                    answer = generate_output(prompt, st.session_state.retriever)
-                st.write(answer)
+                    try:
+                        answer = generate_output(prompt, st.session_state.retriever)
+                    except GeminiLimitExceeded as e:
+                        answer = str(e)
+                        st.warning(str(e))
+                        st.info("💡 **Tip:** Go to the LLM settings section above and switch the provider to **Groq** to continue chatting without interruption.")
+                if not isinstance(answer, str) or not answer.startswith("⚠️"):
+                    st.write(answer)
                 st.session_state.messages.append({"role": "assistant", "content": answer})
 
                 # Save session history
@@ -818,10 +825,15 @@ elif st.session_state.active_tab == "quiz":
         if st.button("Generate Quiz"):
             with st.spinner("Generating..."):
                 from quiz import generate_quiz
-                st.session_state.quiz_data = generate_quiz(
-                    retriever=st.session_state.retriever,
-                    topic=topic, num_questions=num_q
-                )
+                try:
+                    st.session_state.quiz_data = generate_quiz(
+                        retriever=st.session_state.retriever,
+                        topic=topic, num_questions=num_q
+                    )
+                except GeminiLimitExceeded as e:
+                    st.warning(str(e))
+                    st.info("💡 **Tip:** Go to the LLM settings section above and switch the provider to **Groq** to continue generating quizzes without interruption.")
+                    st.session_state.quiz_data = None
 
     if st.session_state.quiz_data:
         st.markdown(f'<div style="border-top:1px solid {BORDER};margin:24px 0;"></div>', unsafe_allow_html=True)
