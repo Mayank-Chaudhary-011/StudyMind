@@ -11,17 +11,22 @@ class GeminiLimitExceeded(Exception):
 
 def get_llm_client():
     """Gets the configured LLM provider, API key, and model."""
-    provider = st.session_state.get("llm_provider", "Groq")
-    model = st.session_state.get("llm_model", "llama-3.1-8b-instant")
+    provider = st.session_state.get("llm_provider", "Gemini")
+    model = st.session_state.get("llm_model", "gemini-2.5-flash")
     
-    # Try user-supplied key from session state, then check environment variables or streamlit secrets
+    # Try session state first
     api_key = st.session_state.get("llm_api_key", "").strip()
     
+    # Then try environment variables
     if not api_key:
-        if provider == "Groq":
-            api_key = os.environ.get("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", "")
-        elif provider == "Gemini":
-            api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
+        api_key = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
+    
+    # Then try Streamlit secrets (may not exist on all deployments)
+    if not api_key:
+        try:
+            api_key = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
+        except Exception:
+            api_key = ""
             
     return provider, api_key, model
 
