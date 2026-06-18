@@ -552,29 +552,10 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── LLM Configuration ─────────────────────────────────────────────────────────
+# ── LLM Configuration (hardcoded) ─────────────────────────────────────────────
 st.session_state.llm_provider = "Gemini"
 st.session_state.llm_model = "gemini-2.5-flash"
 
-st.markdown(f"""
-<div class="upload-section">
-    <div class="s-eye a4">Setup</div>
-    <div class="s-title a4">Enter your <em>Gemini API Key.</em></div>
-</div>
-""", unsafe_allow_html=True)
-
-entered_key = st.text_input(
-    "Gemini API Key",
-    value=st.session_state.get("llm_api_key", ""),
-    type="password",
-    help="Get your free API key from [aistudio.google.com](https://aistudio.google.com/apikey)",
-    placeholder="Enter your Gemini API key..."
-)
-if entered_key != st.session_state.get("llm_api_key", ""):
-    st.session_state.llm_api_key = entered_key
-    st.rerun()
-
-st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
